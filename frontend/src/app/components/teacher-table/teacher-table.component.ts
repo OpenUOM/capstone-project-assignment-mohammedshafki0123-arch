@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, NavigationExtras } from '@angular/router';
 import { faTrash, faPlus, faPenSquare } from '@fortawesome/free-solid-svg-icons';
 import { AppServiceService } from '../../app-service.service';
+
 @Component({
   selector: 'app-teacher-table',
   templateUrl: './teacher-table.component.html',
@@ -13,6 +14,7 @@ export class TeacherTableComponent implements OnInit {
   faPlus = faPlus;
   faPenSquare = faPenSquare;
   teacherData: any;
+  allTeacherData: any; // தேடுவதற்காக ஒரிஜினல் டேட்டாவை சேமிக்கப் பயன்படும்
   selected: any;
 
   constructor(private service: AppServiceService, private router: Router) { }
@@ -45,7 +47,10 @@ export class TeacherTableComponent implements OnInit {
   getTeacherData() {
     this.selected = 'Teachers';
     this.service.getTeacherData().subscribe((response) => {
-      this.teacherData = Object.keys(response).map((key) => [response[key]]);
+      // டேட்டாவை அப்படியே அரே-வாக (Array) மாற்றுகிறோம்
+      this.teacherData = Object.keys(response).map((key) => response[key]);
+      // பேக்கப் எடுத்து வைக்கிறோம்
+      this.allTeacherData = [...this.teacherData];
     }, (error) => {
       console.log('ERROR - ', error)
     })
@@ -55,22 +60,23 @@ export class TeacherTableComponent implements OnInit {
     this.selected = 'Students';
     this.service.getStudentData().subscribe((response) => {
       this.teacherData = response;
+      this.allTeacherData = [...this.teacherData]; // மாணவர்களுக்கும் பேக்கப்
     }, (error) => {
       console.log('ERROR - ', error)
     })
   }
 
   search(value) {
-    let foundItems = [];
-    if (value.length <= 0) {
-      this.getTeacherData();
+    const searchTerm = value.toLowerCase();
+    
+    if (searchTerm.length <= 0) {
+      // தேடல் காலி என்றால் பேக்கப்பில் இருக்கும் எல்லா டேட்டாவையும் காட்டு
+      this.teacherData = [...this.allTeacherData];
     } else {
-      let b = this.teacherData.filter((teacher) => {
-        if (teacher[0].name.toLowerCase().indexOf(value) > -1) {
-          foundItems.push(teacher)
-        }
+      // பேக்கப்பில் இருந்து மட்டும் தேடு (இதுதான் சரியான முறை)
+      this.teacherData = this.allTeacherData.filter((teacher) => {
+        return teacher.name.toLowerCase().includes(searchTerm);
       });
-      this.teacherData = foundItems;
     }
   }
 
